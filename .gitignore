@@ -1,9 +1,4 @@
-/terraform/aws/tfvars.env
-
-/terraform/aws/vpc/.terraform
-/terraform/aws/vpc/.terraform.lock.hcl
-/terraform/aws/vpc/terraform.tfstate
-
-
-/terraform/aws/eks/.terraform
-/terraform/aws/eks/.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+.terraform
