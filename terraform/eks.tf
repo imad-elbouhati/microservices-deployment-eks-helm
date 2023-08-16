@@ -57,7 +57,7 @@ module "weather-vpc" {
 
 
 resource "aws_eks_cluster" "aws_eks" {
-  name     = "eks_cluster_weather"
+  name     = "eks-cluster-weather"
   role_arn = aws_iam_role.eks_cluster.arn
 
   vpc_config {
