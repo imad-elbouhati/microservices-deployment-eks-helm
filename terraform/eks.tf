@@ -29,8 +29,8 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSServicePolicy" {
 
 module "weather-vpc" {
   source = "terraform-aws-modules/vpc/aws"
-  name = "weather-vpc"
-  cidr = "10.0.0.0/16"
+  name   = "weather-vpc"
+  cidr   = "10.0.0.0/16"
 
   azs             = ["eu-west-3a", "eu-west-3b"]
   private_subnets = ["10.0.0.0/19", "10.0.32.0/19"]
@@ -122,4 +122,12 @@ resource "aws_eks_node_group" "node" {
     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
   ]
+}
+
+resource "aws_iam_user" "gitlab" {
+  name = "gitlab"
+}
+
+resource "aws_iam_access_key" "gitlab" {
+  user = aws_iam_user.gitlab.name
 }
