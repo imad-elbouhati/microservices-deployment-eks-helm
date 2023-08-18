@@ -1,0 +1,38 @@
+stages:
+  - build
+  - push
+build:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+  script:
+    - cd auth
+    - docker build -t $CI_REGISTRY_USER/weatherapp-auth . --no-cache
+    - cd ../ui
+    - docker build -t $CI_REGISTRY_USER/weatherapp-ui .
+    - cd ../weather
+    - docker build -t $CI_REGISTRY_USER/weatherapp-weather .
+    rules:
+      - if: '$CI_COMMIT_TAG == null' 
+push:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+  script:
+    - cd auth
+    - docker build -t $CI_REGISTRY_USER/weatherapp-auth:$CI_COMMIT_SHA . --no-cache
+    - cd ../ui
+    - docker build -t $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_SHA  .
+    - cd ../weather
+    - docker build -t $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_SHA  .
+    - docker push $CI_REGISTRY_USER/weatherapp-auth:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_SHA
+    only:
+      - main
