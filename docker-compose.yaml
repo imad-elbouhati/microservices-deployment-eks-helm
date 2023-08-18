@@ -12,7 +12,7 @@ services:
       - app-net
   ui:
     restart: always
-    build: ./UI
+    build: ./ui
     depends_on:
       - auth
       - weather
