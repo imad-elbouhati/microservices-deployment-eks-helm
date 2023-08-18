@@ -31,6 +31,7 @@ push:
     - docker build -t $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_SHA  .
     - cd ../weather
     - docker build -t $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_SHA  .
+    
     - docker push $CI_REGISTRY_USER/weatherapp-auth:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_SHA
