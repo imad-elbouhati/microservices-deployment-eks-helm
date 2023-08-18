@@ -1,0 +1,16 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2023-08-18T15:27:36Z"
+  name: cicd
+  namespace: staging
+  resourceVersion: "9751"
+  uid: 8e0eaa71-7096-4dae-bbf8-d5e16b852238
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cicd
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: gitlab

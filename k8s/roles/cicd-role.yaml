@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: "2023-08-18T15:31:29Z"
+  name: cicd
+  namespace: default
+  resourceVersion: "10441"
+  uid: 42dffc64-2381-4749-8914-db0a70da693b
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'

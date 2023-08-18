@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: "2023-08-18T15:23:31Z"
+  name: cicd
+  namespace: staging
+  resourceVersion: "9221"
+  uid: 2f6ab20d-580a-42bd-be6a-005b863fa472
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
