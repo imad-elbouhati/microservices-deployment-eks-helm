@@ -61,4 +61,4 @@ deliver:
     - cd ../weatherapp-weather
     - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config -n staging --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_SHA .
   only:
-    main
+    - main
