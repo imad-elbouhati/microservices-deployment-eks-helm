@@ -67,7 +67,7 @@ deliver:
 promote:
   stage: promote
   services:
-    - docker:bind
+    - docker:dind
   image: docker:latest
   before_script:
     - apk add git
@@ -101,13 +101,13 @@ deploy:
   script:
     - cd helm/weatherapp-auth
     - helm dependency build .
-    - helm upgrade --install weatherapp-auth --kubeconfig /tmp/.kube/config -n staging --set mysql.auth.rootPassword=$DB_PASSWORD --set image.tag=$CI_COMMIT_TAG .
+    - helm upgrade --install weatherapp-auth --kubeconfig /tmp/.kube/config --set mysql.auth.rootPassword=$DB_PASSWORD --set image.tag=$CI_COMMIT_TAG .
 
     - cd ../weatherapp-ui
-    - helm upgrade --install weatherapp-ui --kubeconfig /tmp/.kube/config -n staging --set image.tag=$CI_COMMIT_TAG .
+    - helm upgrade --install weatherapp-ui --kubeconfig /tmp/.kube/config --set image.tag=$CI_COMMIT_TAG .
     
     - cd ../weatherapp-weather
-    - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config -n staging --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_TAG .
+    - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_TAG .
   rules:
     - if: '$CI_COMMIT_TAG'
       when: manual
