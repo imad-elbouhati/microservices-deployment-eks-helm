@@ -2,6 +2,8 @@ stages:
   - build
   - push
   - deliver
+  - promote
+  - deploy
 build:
   image: docker:latest
   stage: build
@@ -62,3 +64,50 @@ deliver:
     - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config -n staging --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_SHA .
   only:
     - main
+promote:
+  stage: promote
+  services:
+    - docker:bind
+  image: docker:latest
+  before_script:
+    - apk add git
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+    - TAGGED_HASH=`git rev-list -n 1 $CI_COMMIT_TAG`
+  script:
+    - echo: "Promoting Docker images" 
+    - docker pull $CI_REGISTRY_USER/weatherapp-auth:$TAGGED_HASH
+    - docker pull $CI_REGISTRY_USER/weatherapp-ui:$TAGGED_HASH
+    - docker pull $CI_REGISTRY_USER/weatherapp-weather:$TAGGED_HASH
+    - docker tag $CI_REGISTRY_USER/weatherapp-auth:$TAGGED_HASH $CI_REGISTRY_USER/weatherapp-auth:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_USER/weatherapp-ui:$TAGGED_HASH $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_USER/weatherapp-weather:$TAGGED_HASH $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_USER/weatherapp-auth:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_USER/weatherapp-ui:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_TAG
+  rules:
+    -if: '$CI_COMMIT_TAG'
+deploy:
+  stage: deploy
+  image:
+    name: alpine/helm:latest
+    entrypoint: [""]
+  before_script:
+    - apk add py3-pip
+    - pip3 install awscli
+    - aws configure set region "eu-west-3"
+    - mkdir /tmp/.kube
+    - echo $K8SCONFIG | base64 -d > /tmp/.kube/config
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+  script:
+    - cd helm/weatherapp-auth
+    - helm dependency build .
+    - helm upgrade --install weatherapp-auth --kubeconfig /tmp/.kube/config -n staging --set mysql.auth.rootPassword=$DB_PASSWORD --set image.tag=$CI_COMMIT_TAG .
+
+    - cd ../weatherapp-ui
+    - helm upgrade --install weatherapp-ui --kubeconfig /tmp/.kube/config -n staging --set image.tag=$CI_COMMIT_TAG .
+    
+    - cd ../weatherapp-weather
+    - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config -n staging --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_TAG .
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
