@@ -1,6 +1,7 @@
 stages:
   - build
   - push
+  - deliver
 build:
   image: docker:latest
   stage: build
@@ -37,3 +38,27 @@ push:
     - docker push $CI_REGISTRY_USER/weatherapp-weather:$CI_COMMIT_SHA
   only:
       - main
+deliver:
+  stage: deliver
+  image:
+    name: alpine/helm:latest
+    entrypoint: [""]
+  before_script:
+    - apk add py3-pip
+    - pip3 install awscli
+    - aws configure set region "eu-west-3"
+    - mkdir /tmp/.kube
+    - echo $K8SCONFIG | base64 -d > /tmp/.kube/config
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+  script:
+    - cd helm/weatherapp-auth
+    - helm dependency build .
+    - helm upgrade --install weatherapp-auth --kubeconfig /tmp/.kube/config -n staging --set mysql.auth.rootPassword=$DB_PASSWORD --set image.tag=$CI_COMMIT_SHA .
+
+    - cd ../weatherapp-ui
+    - helm upgrade --install weatherapp-ui --kubeconfig /tmp/.kube/config -n staging --set image.tag=$CI_COMMIT_SHA .
+    
+    - cd ../weatherapp-weather
+    - helm upgrade --install weatherapp-weather --kubeconfig /tmp/.kube/config -n staging --set apiKey=$API_KEY --set image.tag=$CI_COMMIT_SHA .
+  only:
+    - main
