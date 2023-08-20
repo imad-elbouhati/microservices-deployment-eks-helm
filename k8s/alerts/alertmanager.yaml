@@ -1,0 +1,15 @@
+global:
+  slack_api_url: 'https://hooks.slack.com/services/{key}'
+
+route:
+  receiver: "slack"
+  group_by: [alertname]
+  group_wait: 5s
+  group_interval: 1m
+  repeat_interval: 5m
+
+receivers:
+- name: "slack"
+  slack_configs:
+  - channel: "#alerts"
+    text: "https://internal.myorg.net/wiki/alerts/{{ .GroupLabels.app }}/{{ .GroupLabels.alertname }}"
