@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: config-ui
+data:
+  auth_host: "weather-auth"
+  auth_port: "8080"
+  weather_host: "weather-weather"
+  weather_port: "5000"
