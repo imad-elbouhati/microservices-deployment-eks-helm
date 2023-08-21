@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: weather-auth
+  name: weather-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: weather-auth
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: weather-auth
+    spec:
+      containers:
+      - image: imadelbouhati/weatherapp-auth:1.3.0
+        name: weatherapp-auth
+        resources: {}
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+        env:
+          - name: DB_HOST
+            value: mysql
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: my-sql-root-password
