@@ -1,4 +1,4 @@
-# DevOps with Kubernetes, AWS, Helm, Terraform, and CI/CD Expertise
+# DevOps with Kubernetes, AWS, Helm, Terraform, and CI/CD
 
 This project showcases my expertise in various DevOps practices and tools. It focuses on deploying Kubernetes on AWS, utilizing Helm for Kubernetes application provisioning, setting up CI/CD pipelines using Gitlab, and establishing disaster recovery and data protection strategies.
 
