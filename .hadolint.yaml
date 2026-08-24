@@ -1,0 +1,6 @@
+# DL3018: pin apk package versions. Deliberately not enforced here —
+# Alpine's package mirror only retains a small number of historical
+# versions, so pinning an exact apk version tends to break builds later
+# when that version is pruned, rather than improving reproducibility.
+ignored:
+  - DL3018
