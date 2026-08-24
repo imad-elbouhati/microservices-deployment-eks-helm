@@ -6,5 +6,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt \
 COPY . .
 USER appuser
 EXPOSE 5000
-ENTRYPOINT ["python3"]
-CMD [ "/app/main.py" ]
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]

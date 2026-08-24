@@ -23,7 +23,7 @@ function authenticateToken(req, res, next) {
         res.redirect("/login");
         return
     }
-    jwt.verify(req.cookies.token, JWT_SECRET, function (err, decoded) {
+    jwt.verify(req.cookies.token, JWT_SECRET, { algorithms: ["HS256"] }, function (err, decoded) {
         if (err) {
             console.log(err)
             res.redirect("/login")
