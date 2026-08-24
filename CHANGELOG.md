@@ -1,10 +1,9 @@
 # Changelog
 
 This project was originally built in August 2023 as a hands-on DevOps
-exercise (AWS EKS + Terraform + Helm + GitLab CI/CD) and is maintained as a
-portfolio demonstration. The entries below cover the 2026-08 audit pass
-that hardened it for that purpose; they are not a record of production
-releases.
+exercise (AWS EKS + Terraform + Helm + GitLab CI/CD) and has been
+maintained since as a reference implementation. The entries below cover
+the 2026-08 audit pass; they are not a record of production releases.
 
 ## 2026-08 — Security and structure audit
 
@@ -52,8 +51,9 @@ releases.
   the above changes.
 
 **Documentation**
-- Rewrote `README.md` as a client-facing case study, and corrected a prior
-  claim that Velero/EBS-snapshot disaster recovery was implemented — no
+- Rewrote `README.md` to document the architecture, security posture, and
+  verification steps more thoroughly, and corrected a prior claim that
+  Velero/EBS-snapshot disaster recovery was implemented — no
   Velero installation, backup schedule, or snapshot resource exists in this
   repository. The `StorageClass` provisions EBS-backed volumes (a
   prerequisite for snapshotting), but no backup/restore workflow is

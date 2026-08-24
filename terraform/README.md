@@ -19,8 +19,8 @@ IAM identity used by CI/CD.
 ## Design notes
 
 - **Networking**: a VPC across two AZs with public and private subnets and
-  a single NAT gateway (cost-optimized for a demo/portfolio workload — a
-  production setup would typically use one NAT gateway per AZ for
+  a single NAT gateway (cost-optimized for a small personal-scale workload
+  — a production setup would typically use one NAT gateway per AZ for
   availability).
 - **Node group**: `t3.small`, scaling 1–2 nodes by default — sized for a
   small demo app, not production load. All three are `variables.tf`
@@ -37,8 +37,8 @@ IAM identity used by CI/CD.
   access entry, this IAM user had no way to authenticate to the cluster
   at all, regardless of what the Kubernetes RBAC objects granted.
 - **State**: local state only (`.gitignore`d) — no remote backend/locking
-  is configured. Fine for a single-operator portfolio project; a team
-  setting would need an S3 + DynamoDB (or Terraform Cloud) backend.
+  is configured. Fine for a single-operator project; a team setting would
+  need an S3 + DynamoDB (or Terraform Cloud) backend.
 
 ## Usage
 

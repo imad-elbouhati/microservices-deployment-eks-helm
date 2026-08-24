@@ -9,11 +9,12 @@
 ![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-2088FF?logo=githubactions&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-A portfolio project demonstrating how to provision AWS infrastructure with
-Terraform and deploy a containerized microservices application to
-Kubernetes (EKS) using Helm and CI/CD. Originally built in August 2023 as a
-hands-on DevOps exercise and maintained since as a reference implementation
-— not a production system, and not presented as one.
+A personal infrastructure engineering project: provisioning AWS
+infrastructure with Terraform and deploying a containerized microservices
+application to Kubernetes (EKS) using Helm and CI/CD. Originally built in
+August 2023 as a hands-on DevOps exercise and maintained since as a
+reference implementation — not a production system, and not presented as
+one.
 
 ## Project Overview
 
@@ -21,10 +22,10 @@ This repository takes a small pre-existing microservices application (Go,
 Node.js, Python) and builds a complete, reproducible deployment platform
 around it: containerization, AWS infrastructure as code, Kubernetes
 manifests, Helm packaging, and CI/CD pipelines (GitLab CI and GitHub
-Actions) that validate, scan, build, and deploy on every change. A client
-evaluating this repository should be able to conclude: *this person can
-take a containerized application and build the AWS/Kubernetes
-infrastructure, security tooling, and delivery pipeline around it.*
+Actions) that validate, scan, build, and deploy on every change. The
+project covers Linux/container provisioning, AWS/Kubernetes
+infrastructure, security tooling, and the delivery pipeline needed to take
+a containerized application from a commit to a running deployment.
 
 **What I personally implemented:** the application source code (`auth/`,
 `ui/`, `weather/`) is a small pre-existing sample "weather app" (Go module
@@ -167,7 +168,7 @@ Bitnami `mysql` chart as a dependency, resolved with `helm dependency
 build`. All three charts pass `helm lint`, and their rendered output
 (including with `ingress`/`autoscaling` enabled) validates against the
 Kubernetes API schema via `kubeconform` — see
-[Evidence and Validation](#evidence-and-validation).
+[Verification](#verification).
 
 ## CI/CD
 
@@ -198,22 +199,6 @@ The validate/scan jobs need no secrets and run on every push and PR, so
 the pipeline shows real, meaningful status without any repository setup.
 Only `deploy` needs credentials, and its absence never blocks the rest of
 the pipeline from passing.
-
-## Disaster Recovery and Backup
-
-**Not currently demonstrated — recommended future improvement.**
-
-An earlier version of this README described an EBS-snapshot/Velero backup
-strategy, but no such implementation exists in this repository: there is
-no Velero installation, no backup `CronJob`, no `VolumeSnapshotClass`, and
-no AWS Backup Terraform resource. What *does* exist is a `StorageClass`
-backed by the EBS CSI driver (`ebs.csi.aws.com`, `gp3`), a prerequisite
-for volume snapshotting but not a backup solution by itself.
-
-A real implementation would require, at minimum: a `VolumeSnapshotClass`
-and scheduled `VolumeSnapshot`s (or Velero with the AWS/EBS plugin), a
-documented and *tested* restore procedure, and a retention/cross-region
-copy policy.
 
 ## Security Considerations
 
@@ -257,10 +242,9 @@ Not implemented here, and would be required for a production deployment:
 - Scheduled/Dependabot-driven rebuilds so OS-level base-image CVEs don't
   silently accumulate between Dockerfile changes.
 
-## Evidence and Validation
+## Verification
 
-Every claim above was checked with a real tool run, not just asserted —
-this section exists so nothing in this README has to be taken on faith:
+Every claim above was checked with a real tool run, not just asserted:
 
 | Layer | Tool | Result |
 |---|---|---|
@@ -322,9 +306,6 @@ helm upgrade --install weatherapp-weather . --set apiKey=<rapidapi-key>
   `DB_PASSWORD`, `JWT_SECRET`, `APIKEY` as repository secrets to enable
   the manual `deploy` job.
 
-### 6. Backup/recovery
-Not implemented — see [Disaster Recovery and Backup](#disaster-recovery-and-backup).
-
 ## Project Decisions
 
 - **Terraform over the console/CLI**: infrastructure changes are
@@ -365,30 +346,14 @@ Not implemented — see [Disaster Recovery and Backup](#disaster-recovery-and-ba
 - Secrets handling via Kubernetes `Secret`s and environment variables,
   with a documented, dated audit trail
 - Verification discipline: every infra/security claim backed by an actual
-  tool run (see Evidence and Validation)
-
-## Freelance Relevance
-
-Based on the work in this repository, this demonstrates the kind of
-project-based infrastructure work I can help with:
-
-- Kubernetes deployment (EKS or otherwise)
-- AWS infrastructure provisioning with Terraform
-- Helm chart development for existing applications
-- CI/CD pipeline implementation (GitLab CI or GitHub Actions)
-- Dockerization and container image hardening
-- Kubernetes security hardening (RBAC, non-root workloads, secret handling)
-- Migrating raw Kubernetes manifests to Helm
-- Dependency/vulnerability triage and remediation
-
-This is project-based availability alongside a full-time role — not
-on-call, incident response, or 24/7 production support.
+  tool run (see [Verification](#verification))
+- Migrating an application from raw, pre-Helm Kubernetes manifests to a
+  templated, versioned Helm-based deployment (see `archive/legacy-k8s-manifests/`)
 
 ## Limitations / What Could Be Extended
 
 Current gaps, stated plainly rather than hidden:
 
-- No disaster-recovery implementation (Velero/snapshots) — see above.
 - No automated tests for the application services.
 - Secrets flow through Helm `--set` from CI variables, not a dedicated
   secrets manager.
@@ -402,10 +367,10 @@ Current gaps, stated plainly rather than hidden:
 - Base-image OS-level CVEs and npm's own bundled-tooling CVEs remain (see
   Security Considerations) — would need a distroless/rebuild strategy.
 
-For a real client engagement, natural next steps in priority order: GitOps
-(ArgoCD/Flux) instead of CI pushing `helm upgrade` imperatively, a tested
-backup/restore workflow, OIDC-based CI/CD authentication, and an
-observability stack (Prometheus/Grafana) actually wired to real alerting.
+Natural next steps in priority order: GitOps (ArgoCD/Flux) instead of CI
+pushing `helm upgrade` imperatively, OIDC-based CI/CD authentication, and
+an observability stack (Prometheus/Grafana) actually wired to real
+alerting.
 
 ## Contact
 
