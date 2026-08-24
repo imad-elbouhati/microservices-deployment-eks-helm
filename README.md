@@ -74,9 +74,6 @@ flowchart TD
     MySQL --> PVC["PersistentVolume (gp3, EBS CSI)"]
 ```
 
-No backup/disaster-recovery component is shown because none is implemented
-in this repository — see [Disaster Recovery](#disaster-recovery-and-backup).
-
 ## Technology Stack
 
 | Category | Technologies |
