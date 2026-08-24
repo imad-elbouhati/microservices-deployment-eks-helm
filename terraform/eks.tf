@@ -28,13 +28,15 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSServicePolicy" {
 }
 
 module "weather-vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  name   = "weather-vpc"
-  cidr   = "10.0.0.0/16"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 6.0"
 
-  azs             = ["eu-west-3a", "eu-west-3b"]
-  private_subnets = ["10.0.0.0/19", "10.0.32.0/19"]
-  public_subnets  = ["10.0.64.0/19", "10.0.96.0/19"]
+  name = "weather-vpc"
+  cidr = var.vpc_cidr
+
+  azs             = var.availability_zones
+  private_subnets = var.private_subnet_cidrs
+  public_subnets  = var.public_subnet_cidrs
 
   public_subnet_tags = {
     "kubernetes.io/role/elb" = "1"
@@ -51,17 +53,25 @@ module "weather-vpc" {
   enable_dns_support   = true
 
   tags = {
-    Environment = "dev"
+    Environment = var.environment
   }
 }
 
 
 resource "aws_eks_cluster" "aws_eks" {
-  name     = "eks-cluster-weather"
+  name     = var.cluster_name
   role_arn = aws_iam_role.eks_cluster.arn
 
   vpc_config {
     subnet_ids = module.weather-vpc.private_subnets
+  }
+
+  # API_AND_CONFIG_MAP enables aws_eks_access_entry (IAM-native cluster
+  # access) below, alongside the legacy aws-auth ConfigMap approach, so
+  # this doesn't break any access already configured directly in-cluster.
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   tags = {
@@ -110,12 +120,12 @@ resource "aws_eks_node_group" "node" {
   subnet_ids      = module.weather-vpc.private_subnets
 
   scaling_config {
-    desired_size = 1
-    max_size     = 2
-    min_size     = 1
+    desired_size = var.node_group_desired_size
+    max_size     = var.node_group_max_size
+    min_size     = var.node_group_min_size
   }
 
-  instance_types = ["t3.small"]
+  instance_types = [var.node_instance_type]
 
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
@@ -125,9 +135,40 @@ resource "aws_eks_node_group" "node" {
 }
 
 resource "aws_iam_user" "gitlab" {
-  name = "gitlab"
+  name = var.cicd_iam_user_name
 }
 
 resource "aws_iam_access_key" "gitlab" {
   user = aws_iam_user.gitlab.name
+}
+
+# Minimum AWS-side permission the CI/CD identity needs: enough to resolve
+# cluster connection details for `aws eks update-kubeconfig`. Authorization
+# inside the cluster is handled entirely by Kubernetes RBAC
+# (k8s/roles/cicd-role.yaml), not by this IAM policy.
+data "aws_iam_policy_document" "gitlab_eks_describe" {
+  statement {
+    actions   = ["eks:DescribeCluster"]
+    resources = [aws_eks_cluster.aws_eks.arn]
+  }
+}
+
+resource "aws_iam_user_policy" "gitlab_eks_describe" {
+  name   = "eks-describe-cluster"
+  user   = aws_iam_user.gitlab.name
+  policy = data.aws_iam_policy_document.gitlab_eks_describe.json
+}
+
+# Maps the gitlab IAM user to the Kubernetes username "gitlab" via EKS's
+# native access-entry mechanism, so it can authenticate to the cluster at
+# all. Grants no Kubernetes permissions by itself — authorization still
+# comes entirely from k8s/roles/cicd-role.yaml and cicd-rolebinding.yaml,
+# which bind that same username to a least-privilege Role. Without this
+# resource, the IAM user has no way to authenticate to the cluster
+# regardless of what the Kubernetes RBAC objects say.
+resource "aws_eks_access_entry" "gitlab" {
+  cluster_name  = aws_eks_cluster.aws_eks.name
+  principal_arn = aws_iam_user.gitlab.arn
+  user_name     = var.cicd_iam_user_name
+  type          = "STANDARD"
 }
