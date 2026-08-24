@@ -2,3 +2,10 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform.lock.hcl
 .terraform
+*.tfvars
+
+.env
+db-data/
+.idea/
+.vscode/
+*.iml

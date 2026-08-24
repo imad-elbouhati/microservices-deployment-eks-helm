@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/abohmeed/auth/authdb"
 	"github.com/dgrijalva/jwt-go"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -15,8 +16,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const secretkey string = "***REMOVED-JWT-SECRET***"
-
+var jwtSecret string
 var dbHost string
 var dbRoot = "root"
 var dbPassword string
@@ -33,6 +33,10 @@ func main() {
 	}
 	if os.Getenv("DB_PASSWORD") != "" {
 		dbPassword = os.Getenv("DB_PASSWORD")
+	}
+	jwtSecret = os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable must be set")
 	}
 	db := authdb.Connect(dbRoot, dbPassword, dbHost)
 	authdb.CreateDB(db)
@@ -107,7 +111,7 @@ func createUser(c *gin.Context) {
 	}
 }
 func GenerateJWT(userName string) (string, error) {
-	var mySigningKey = []byte(secretkey)
+	var mySigningKey = []byte(jwtSecret)
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 

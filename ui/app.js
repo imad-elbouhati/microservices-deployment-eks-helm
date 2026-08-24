@@ -13,12 +13,17 @@ app.use(cookieParser());
 
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable must be set");
+}
+
 function authenticateToken(req, res, next) {
     if (!req.cookies.token) {
         res.redirect("/login");
         return
     }
-    jwt.verify(req.cookies.token, "***REMOVED-JWT-SECRET***", function (err, decoded) {
+    jwt.verify(req.cookies.token, JWT_SECRET, function (err, decoded) {
         if (err) {
             console.log(err)
             res.redirect("/login")
