@@ -32,3 +32,8 @@ spec:
               secretKeyRef:
                 name: mysql-secret
                 key: my-sql-root-password
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: jwt-secret
+                key: jwt-secret

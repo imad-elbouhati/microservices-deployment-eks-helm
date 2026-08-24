@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # Builds every service image on every push and PR. Requires no secrets,
+  # so it always runs and always reflects whether the Dockerfiles actually
+  # build.
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [auth, ui, weather]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ${{ matrix.service }} image
+        run: docker build -t weatherapp-${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+
+  # Lints all three Helm charts. No secrets required.
+  helm-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Lint charts
+        run: |
+          for chart in helm/weatherapp-auth helm/weatherapp-ui helm/weatherapp-weather; do
+            helm lint "$chart"
+          done
+
+  # Checks Terraform formatting. No AWS credentials required.
+  terraform-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive terraform/
+
+  # Pushes images to GHCR on pushes to main. Uses the built-in GITHUB_TOKEN,
+  # so it works without any repository secrets being configured.
+  push:
+    needs: [build, helm-lint, terraform-fmt]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [auth, ui, weather]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ${{ matrix.service }}
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/weatherapp-${{ matrix.service }}
+          docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./${{ matrix.service }}
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+  # Deploys to EKS via Helm. Intentionally manual (workflow_dispatch) rather
+  # than automatic on every push — this repository targets project-based
+  # infrastructure delivery, not always-on production deploys. Requires
+  # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, DB_PASSWORD,
+  # JWT_SECRET and APIKEY to be configured as repository secrets; the job is
+  # skipped entirely if they are not set up, so it never blocks the rest of
+  # the pipeline from going green.
+  deploy:
+    needs: [push]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - uses: azure/setup-helm@v4
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name eks-cluster-weather --region "${{ secrets.AWS_REGION }}"
+      - name: Deploy weatherapp-auth
+        working-directory: helm/weatherapp-auth
+        run: |
+          helm dependency build .
+          helm upgrade --install weatherapp-auth -n staging \
+            --set mysql.auth.rootPassword="${{ secrets.DB_PASSWORD }}" \
+            --set jwtSecret="${{ secrets.JWT_SECRET }}" \
+            --set image.tag="${{ github.sha }}" .
+      - name: Deploy weatherapp-ui
+        working-directory: helm/weatherapp-ui
+        run: |
+          helm upgrade --install weatherapp-ui -n staging \
+            --set jwtSecret="${{ secrets.JWT_SECRET }}" \
+            --set image.tag="${{ github.sha }}" .
+      - name: Deploy weatherapp-weather
+        working-directory: helm/weatherapp-weather
+        run: |
+          helm upgrade --install weatherapp-weather -n staging \
+            --set apiKey="${{ secrets.APIKEY }}" \
+            --set image.tag="${{ github.sha }}" .

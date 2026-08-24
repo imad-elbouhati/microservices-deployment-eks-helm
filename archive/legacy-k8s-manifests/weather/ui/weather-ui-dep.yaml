@@ -42,4 +42,9 @@ spec:
               configMapKeyRef:
                 name: config-ui
                 key: weather_port
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: jwt-secret
+                key: jwt-secret
 status: {}

@@ -2,6 +2,11 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Signing secret for JWTs. Required — must be supplied at install/upgrade
+# time (e.g. `--set jwtSecret=...`) and must match the value used by the
+# weatherapp-ui release. Never commit a real value here.
+jwtSecret: ""
+
 replicaCount: 4
 
 image:
@@ -25,16 +30,18 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000
 
 service:
   type: ClusterIP

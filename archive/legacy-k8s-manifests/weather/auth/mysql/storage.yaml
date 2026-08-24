@@ -16,6 +16,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: cloud-ssd
-provisioner: kubernetes.io/aws-ebs
+# Uses the EBS CSI driver (provisioned in terraform/csi-driver-addon.tf),
+# not the deprecated in-tree "kubernetes.io/aws-ebs" provisioner.
+provisioner: ebs.csi.aws.com
 parameters:
-  type: gp2
+  type: gp3

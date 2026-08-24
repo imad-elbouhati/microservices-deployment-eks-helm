@@ -1,15 +1,17 @@
-#build stage
-FROM golang:alpine AS builder
-RUN apk add git
+# build stage
+FROM golang:1.22-alpine AS builder
 WORKDIR /go/src/app
-RUN git clone https://github.com/imad-elbouhati/microservices-deployment-eks-helm
-WORKDIR /go/src/app/microservices-deployment-eks-helm/auth/src/main
+COPY src/authdb ./src/authdb
+COPY src/main ./src/main
+WORKDIR /go/src/app/src/main
 RUN go build -o /go/bin/app -v ./...
 
-#final stage
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
+# final stage
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates \
+    && addgroup -S -g 1000 app && adduser -S -u 1000 app -G app
 COPY --from=builder /go/bin/app /app
-ENTRYPOINT /app
+USER app
 LABEL Name=auth Version=0.0.1
 EXPOSE 8080
+ENTRYPOINT ["/app"]

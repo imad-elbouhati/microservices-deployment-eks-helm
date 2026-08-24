@@ -41,6 +41,11 @@ spec:
               secretKeyRef:
                 name: {{ .Release.Name }}-mysql
                 key: mysql-root-password
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "weatherapp-auth.fullname" . }}
+                key: jwt-secret
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

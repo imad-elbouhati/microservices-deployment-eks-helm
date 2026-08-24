@@ -42,6 +42,11 @@ spec:
             value: weatherapp-weather
           - name: WEATHER_PORT
             value: "5000"
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "weatherapp-ui.fullname" . }}
+                key: jwt-secret
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
